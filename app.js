@@ -232,6 +232,12 @@ var controller = (function(budgetCtrl, UICtrl) {
     return {
         init: function() {
             console.log('Programm is Initialized!')
+            UICtrl.displayBudget( { // Create Object in-place
+                budget: 0,
+                totalInc: 0,
+                totalExp: 0,
+                percentage: -1
+                });
             setupEventListeners();
         }
     }  
