@@ -104,7 +104,11 @@ var UIController = (function() {
         inputValue: '.add__value',
         inputBtn: '.add__btn',
         incomeContainer: '.income__list',
-        expenseContainer: '.expenses__list'
+        expenseContainer: '.expenses__list',
+        budgetLabel:  '.budget__value',
+        incomeLabel:  '.budget__income--value',
+        expensesLabel: '.budget__expenses--value',
+        percentageLabel: '.budget__expenses--percentage'
     };
     
    return {
@@ -142,6 +146,7 @@ var UIController = (function() {
        
        clearFields: function() {
            fields = document.querySelectorAll(DOMStrings.inputDescription + ', ' + DOMStrings.inputValue);
+
            
            fieldsArr = Array.prototype.slice.call(fields);
            
@@ -150,6 +155,20 @@ var UIController = (function() {
            });
            
            fieldsArr[0].focus();  // First Field is description
+       },
+       
+       displayBudget: function(obj) {
+           console.log(obj)
+           document.querySelector(DOMStrings.budgetLabel).textContent 
+               = obj.budget;  
+           document.querySelector(DOMStrings.incomeLabel).textContent 
+               = obj.totalInc;   
+           document.querySelector(DOMStrings.expensesLabel).textContent =      obj.totalExp;
+           if (obj.percentage > 0) {
+                document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
+           } else {
+                document.querySelector(DOMStrings.percentageLabel).textContent = '---';
+           }
        },
        
        getDOMStrings: function() {
@@ -177,13 +196,13 @@ var controller = (function(budgetCtrl, UICtrl) {
     
     var updateBudget = function() {
         // 1. Calculate the Budget  
-        budgetCtrl.calculateBudget()
+        budgetCtrl.calculateBudget();
 
         // 2. Return the Budget
         var budget = budgetCtrl.getBudget();
         
         // 3. Display Budget on the UI   
-        console.log(budget);
+        UICtrl.displayBudget(budget);
     };
  
     var ctrlAddItem = function() {
