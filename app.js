@@ -331,7 +331,7 @@ var controller = (function(budgetCtrl, UICtrl) {
                 });
             setupEventListeners();
         }
-    }  
+    };  
     
 })(budgetController, UIController);
 
