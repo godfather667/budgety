@@ -1382,17 +1382,79 @@ var updatePercentages = function() {
     UICtrl.displayPercentages(percentages)  // Replacement Code
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Formatting our Budget Numbers: String Manipulation
+The number formatting is done in stages:
+* Convert the number to an absolute number.
+* Convert absolute number to a fixed point number with 2 decimal points.
+* Spit the number into it's integer and decimal parts.
+* If the length of the integer is less than a thousand - Do Nothing.
+* Otherwise, place a comma between the third and fourth character.
+* Return the combined  sign, integer, and decimal values as a string.
 
-
-
-
-
-
-
+The code for this private function is as follows:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
-
-
+var formatNumber = function(num, type) {
+     var numSplit, inc, dec;
+    
+    // Add '+' or '-' depending on type (inc or exp)
+    // Exactly 2 decimal points, and a comma if > 999.99
+    
+     num = Math.abs(num);
+     num = num.toFixed(2);
+     numSplit = num.split('.');
+     int = numSplit[0];
+     
+     if (int.length >3) {
+         int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, 3);
+     }
+     dec = numbSplit[1];
+    
+     return (type === 'exp' ? '-' : '+') + ' ' + int + dec;
+};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We now we can simply convert numbers in place by using the *formatNumber* function. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ addListItem: function(obj, type) {
+      ::         ::          ::
+    // 2. Replace the placeholder test with some actual data
+
+    newHtml = html.replace('%id%', obj.id);
+    newHtml = newHtml.replace('%description%', obj.description);
+
+//    newHtml = newHtml.replace('%value%', obj.value);              // Old Code
+    newHtml = newHtml.replace('%value%', formatNumber(obj.value));  // New Code
+      ::         ::          ::          :;
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We Also need to do the same thing in *displayBudget*.
+
+However, there are a small problem in that the *type* is not available in this method!  So first thing to do is create a variable called type, and setup to the proper value depending on the sign of budget! Then we replace the three values: **budget, income, and expenses**.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+displayBudget: function(obj) {
+    var type;
+    obj.budget >= 0? type = 'inc': type = 'exp';
+ 
+    document.querySelector(DOMStrings.budgetLabel).textContent 
+        = formatNumber(obj.budget, type);  
+    document.querySelector(DOMStrings.incomeLabel).textContent 
+        = formatNumber(obj.totalInc, 'inc');  
+    document.querySelector(DOMStrings.expensesLabel).textContent
+        = formatNumber(obj.totalExp, 'exp');
+    if (obj.percentage > 0) {
+         document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
+    } else {
+         document.querySelector(DOMStrings.percentageLabel).textContent = '---';
+    }
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+
+
 
 
 

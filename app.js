@@ -162,6 +162,27 @@ var UIController = (function() {
             callback(list[i], i);
         }
     };
+      
+    var formatNumber = function(num, type) {
+
+        var numSplit, inc, dec;
+
+        // Add '+' or '-' depending on type (inc or exp)
+        // Exactly 2 decimal points, and a comma if > 999.99
+
+        num = Math.abs(num);
+        num = num.toFixed(2);
+        numSplit = num.split('.');
+        int = numSplit[0];
+
+        if (int.length >3) {
+            int = int.substr(0, int.length - 3) + ',' + int.substr(int.length - 3, 3);
+        }
+        dec = numSplit[1];
+
+        return (type === 'exp' ? '-' : '+') + ' ' + int + '.' + dec;
+    };
+
    
    return {
        getInput: function() {
@@ -180,7 +201,7 @@ var UIController = (function() {
         
         if (type === 'inc') {
             element = DOMStrings.incomeContainer;
-            html = '<div class="item clearfix" id="inc-%id%"><div  class="item__description">%description%</div><div class="right clearfix"><div class="item__value">+%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+            html = '<div class="item clearfix" id="inc-%id%"><div  class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
         } else if (type === 'exp') {
             element = DOMStrings.expenseContainer;
             html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
@@ -190,7 +211,7 @@ var UIController = (function() {
  
         newHtml = html.replace('%id%', obj.id);
         newHtml = newHtml.replace('%description%', obj.description);
-        newHtml = newHtml.replace('%value%', obj.value);
+        newHtml = newHtml.replace('%value%', formatNumber(obj.value, type));
                                     
         // 3. Insert the HTML into the DOM.
         document.querySelector(element).insertAdjacentHTML('beforeend', newHtml);          
@@ -215,11 +236,15 @@ var UIController = (function() {
        },
        
        displayBudget: function(obj) {
+           var type;
+           obj.budget >= 0? type = 'inc': type = 'exp';
+        
            document.querySelector(DOMStrings.budgetLabel).textContent 
-               = obj.budget;  
+               = formatNumber(obj.budget, type);  
            document.querySelector(DOMStrings.incomeLabel).textContent 
-               = obj.totalInc;   
-           document.querySelector(DOMStrings.expensesLabel).textContent =      obj.totalExp;
+               = formatNumber(obj.totalInc, 'inc');  
+           document.querySelector(DOMStrings.expensesLabel).textContent
+               = formatNumber(obj.totalExp, 'exp');
            if (obj.percentage > 0) {
                 document.querySelector(DOMStrings.percentageLabel).textContent = obj.percentage + '%';
            } else {
@@ -238,7 +263,8 @@ var UIController = (function() {
                 }
             });
         },
-        
+
+          
        getDOMStrings: function() {
            return DOMStrings;
        }    
