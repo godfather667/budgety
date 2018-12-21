@@ -1,0 +1,2370 @@
+
+**JavaScript Course Section 6:**
+
+# Section 6 - Introduction
+
+This section will build a budgetary application, integrating much of the knowledge we have learned up to this point.
+## Project "Budgety" User Interface
+
+
+![Figure [User Interface]: The Design of User Interface](budgety.png)
+
+This application keeps track income and expenses for a specified month.
+
+## Project Planning and Architecture:
+
+![Figure [Controller Flow Diagram]: Program Architecture](controller_diagram.png)
+
+Let us start the design proces by indentifing a couple of primary operations that this program *must accomplish*.
+
+* To-Do List
+  * Processing starts with clicking the OK Button (circle with checkmark)
+    * We need to build  an *Event Handler* to support this functionality.
+  * Get data from Input Fields
+    * Add new our *data Structure*
+    * Add the new item to the *User Interface(UI)*.
+  * Calculate the new Budget
+    * Update the *User Interface*.
+
+To accomplish these milestones we will have to generate a number of *Functions and Methods*.
+
+* __The best way to organize your code is to use _Modules__.
+  * Modules are an important aspect of any robust application architecture.
+  * Keep the units of code for a project both cleanly separated and organized.
+  * Encapsulate some data into privacy and expose other data publicly.
+
+
+Since some of these processing items are concerned the UI and others with Data Management, we would like to group methods and functions in modules that share the same general interests.
+
+* __Lets us created three modules to house these processing methods and functions__.
+  * UI Module
+    * Get Input Values
+    * Add the new item to the UI
+    * Update the UI
+  * Data Module
+    * Add new item to our data structure
+    * Calculate Budget
+  * Controller Module
+    * Add event Handler
+
+The **Controller Module** is primarily used to control the other modules.
+
+This Section is only a preliminary outline of this project. We will be adding additional methods and functions in the future. However, we will not add more modules. The modules represent the primary structural architecture for the project.
+## Implementing the Module Pattern
+
+We will use a popular **Module Pattern** for constructing our architecture and talk about the following subjects;
+
+* Module Pattern
+* Public and private data
+* Exposing Methods
+* Encapsulation 
+* Separations of concerns
+### Uses of Modules
+Reasons for Modules:
+
+* We want to keep pieces of code that are related together
+* Modules and Programs contained in a Module that are private and only accessible within the module
+* Modules protect data and code from being modified by external code
+* We will also need *public methods*
+* Data Encapsulation allows the hiding of the implementation details from the outside scope.
+* We only Expose a Public Interface, sometimes called an API
+
+The Module Pattern is based on **closures** and **IIFE**.
+
+The Module is encapsulated in a IIFE, and Immediately Invoked Expression. The pattern is:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var [module name]  = ( [function()]  {
+   ---- CODE ----
+}) () 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* IIFE Expression Construction;
+  * __module name__  - The variable holding a reference to the anonymous function created by IIFE.
+  * __(__ - Opening parentheses of expression 
+  * __function()__ - The anonymous function specification
+  * __{ ---- CODE ----}__ - Body of the function
+  * __)__ Closing parentheses of expression
+  * __( )__ - Trailing parentheses pair executes the function
+
+The following is an example simple module;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var budgetController = (function() {
+    var x = 23;
+    var add = function(a) {
+         return x + a;
+    }
+        
+    return {
+        publicTest: function(b) {
+            console.log*(add(b));
+        }
+    }    
+})();
+
+---- Console Output ----
+budgetController.x              - Returns 'undefined'
+budgetController.add(5)         - Returns 'undefined'
+budgetController.publicTest(5)  - Returns '28'
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The IIEF encapsulates both data and methods, ensuring that the methods and data is isolated from the Outside Scope.
+
+So how do we expose public methods to the Outside Scope? 
+
+The "secret" of *Module Pattern* is that the IIFE can return an object containing the **Public Methods**. See the return statement in the code above.
+
+The other "secret" is the *privacy of the non-public methods and data* are enclosed in the anonymous function's scope. This is what we call a **closure** because the scope *closes around the anonymous function's scope* making access of private methods and data unavailable to the Outside Scope. 
+
+### Separation of Concerns
+
+* Each module should be independent as possible.
+* Modules may only talk to other modules through their public API.
+* Additionally, modules should communicate with other modules via external controller module where possible.
+* Since when there is not direct connection between modules themselves, replacing one of modules, as long as it's public interface is unchanged, is simple.  
+* A module should **_never** know anything about the internals of another module_.
+
+To be able to connect the _budgetController_ and the _UIController_ we will need to create a third module, the _controller_.
+
+In order for the _controller_ to controller the other modules, the module reference must be passed as arguments.
+
+The following is a more complete version of the program above:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ var budgetController = (function() {
+    var x = 23;
+    var add = function(a) {
+         return x + a;
+    }
+        
+    return {
+        publicTest: function(b) {
+            return(add(b));
+        }
+    }    
+})();
+
+budgetController.publicTest(6)
+
+
+// UI Controller
+var UIController = (function() {
+                    
+   // Some Code                 
+                    
+})();
+
+var controller = (function(budgetCtrl, UICtrl) {
+    
+    var z =  budgetCtrl.publicTest(5)
+
+    return {
+      anotherPublic: function() {
+         console.log(z)
+    }
+    
+})(budgetController, UIController);
+
+controller.anotherPublic(5)
+
+---- Console Output ----
+budgetController.publicTest(6)  - Returns '29'
+controller.anotherPublic(5)     - Returns '28'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The _controller_ could just call the other modules because they are all in the outer scope.  However, this is a bad idea, since it breaks our _separation of concerns_ rule.
+
+Further, we could use the same names for the arguments and parameters. Again, this is not a good idea.  While it does not actually break a rule, there is a likelihood of confusion. So it is best to use different names in the function code.
+       
+The code above is the "bare bones" architecture of our project.
+## Setting up Event Handlers
+Things to learn in this section:
+
+* How to Setup *Event Listeners* for keypress events.
+* How to use an *Event Object*.
+
+Let's clean up our example code and start with the bare module code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+//
+// Bare Bones budget framework
+//
+
+// BudgetController
+var budgetController = (function() {
+    
+    // Some Code
+    
+ })();
+
+
+// UI Controller
+var UIController = (function() {
+                    
+   // Some Code                 
+                    
+})();
+
+// Global App Controller
+var controller = (function(budgetCtrl, UICtrl) {
+ 
+    // Some Code
+    
+})(budgetController, UIController);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The event processing takes place primarily in the _Global App Controller_. This will be where events are processed and the appropriate functions and methods are called to perform the desired processing.
+
+Let's add our event handlers to the *controller* module.  This is where events are processed, the other modules perform the appropriate functions is support of the *Controller module*.
+
+One new wrinkle is that we have to respond to two events, *Carriage Return or Enter* and the *Check Mark* being selected.
+
+* This means that our *addEventListener* comes in two slightly different forms:
+  * The first is where the function processing is specified in the listener itself.
+  * The second is where the function lives elsewhere and *addEventListener* will execute it when event occurs. For this reason the Function Execution Operator, '()', is missing. It is referenced here, but executed by the *addEventListener*.
+  * The third form, not shown, is to use an IIFE as the function. This implies that the code **will not be duplicated** elsewhere.
+* Since the same code will be used for processing these events:
+    * Create a separate function for processing the events, called *ctrlAddItem*.
+    * Call the function in both event handlers.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ (1) document.addEventListener('keypress',function(event) {
+        if(event.keyCode === 13 || event.which === 13) {
+            ctrlAddItem();
+        }
+     }
+        
+ (2) document.querySelector('.add__btn').addEventListener('click', ctrlAddItem);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new controller module now looks as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// Global App Controller
+
+var controller = (function(budgetCtrl, UICtrl) {
+    
+    var ctrlAddItem = function() {
+    
+    // Things to do
+        
+    // 1. Get the field Input Data
+        
+    // 2. Add item to the budgetController 
+        
+    // 3. Add the item to the UI
+
+    // 4. Clear the Fields
+        
+    // 5. Calculate the Budget
+        
+    // 6. Display the Budget on the UI
+    
+        console.log('Key Works')
+    }
+        
+    document.querySelector('.add__btn').addEventListener('click', ctrlAddItem);
+    
+    document.addEventListener('keypress',function(event) {
+        
+    // Process Return Key - (Alternative to hitting check mark box)
+        if(event.keyCode === 13 || event.which === 13) {
+            ctrlAddItem();
+        }
+    });
+                                                        
+})(budgetController, UIController);
+
+---- Console Output ----
+Entering Values followed by < enter >  - Returns 'Key Works'
+Selecting the Checkmark Box            - Returns 'Key Works'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Reading Data into Different HTML Types
+The Global Application Controller, *controller*, needs information to determine it's various operations. This information is gathered or distributed through the other modules.  The controller is where decisions are made, *budgetController* and *UIController* provide the methods and functions that do the work.
+
+### UI Controller
+Here we will add a *Public Method* to the UIController to get data from the UI:
+
+We will be getting three items from the UIController:
+1. **add __ type** selection of +/- determining whether the entry is an expense or income.
+2. **add __ description** which contains the description of item.
+3. **add __ value** which contains the item value.
+
+The other element in this group was **'add __ btn'** which is handled in the controller.
+
+After getting the values from the UI, the values have to be returned to the caller.
+
+So instead of loading the values into variables, will directly return them as properties in a single object.
+
+The new controller code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// UI Controller
+var UIController = (function() {
+                    
+   return {
+       getInput: function() {
+           return {
+               type: document.querySelector('.add__type').value,
+               // type will return either 'inc' or 'exp' as the selection.
+               description: document.querySelector('.add__description').value,
+               value: document.querySelector('.add__value').value
+           };
+       }  
+   };
+                    
+})();
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This method is used by the *controller* to acquire the values. So we add the following code to the controller.
+We entered test values in the 'type', 'description', and 'value' fields on UI.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+    // 1. Get the field Input Data
+    var input = UICtrl.getInput();
+    console.log(input);
+
+---- Console Output ----
+{type: "income", description: "Item", value: "88"}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Replacing Class Descriptor Strings with standard property values. 
+The purpose is place all the Class Descriptor Strings in one place so any changes will be propagated throughout the program.
+
+For example in the _UIController Module_ all the Class Descriptor Strings are defined in the **DOMStrings** Object.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ var DOMStrings = {   
+    inputType: '.add__type',
+    inputDescription: '.add__description',
+    inputValue: '.add__value',
+    inputBtn: '.add__btn'
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+So if the name '.add__type' were to be changed in the HTML, it only has to be specified here.  The properties are used to replace the Class Descriptor Strings in the code. For Example:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+getInput: function() {
+    return {
+        type: document.querySelector(DOMStrings.inputType).value,
+        description: document.querySelector(DOMStrings.inputDescription).value,
+        value: document.querySelector(DOMStrings.inputValue).value
+    };
+} 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There is one problem with this solution, the DOMStrings Object is defined in the UIController Module. It is currently a private value of that module.  We want to reference the DOMStrings Object in all the modules, so we will have to return from UIController so it can be referenced by other modules.
+
+This is accomplished by adding the following code to in the same return statement as *getInput*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+return {
+    getInput: function() {
+        return {
+            type: document.querySelector(DOMStrings.inputType).value,
+            description: document.querySelector(DOMStrings.inputDescription).value,
+            value: document.querySelector(DOMStrings.inputValue).value
+        };
+    },
+    
+    getDOMStrings: function() {
+        return DOMStrings;
+    }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Then add the following code at the top of the *controller module*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var controller = (function(budgetCtrl, UICtrl) {
+    
+    var DOM = UICtrl.getDOMStrings()  // Get DOMStrings Object
+ 
+      ::       ::       ::
+}  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now the we have access to the DOMStrings Object, we can replace the Class Descriptor String *'add __ btn'* with *'DOM.inputBtn'*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ document.querySelector('.add__btn').addEventListener('click', ctrlAddItem);
+
+// Replace with the following:
+ document.querySelector(DOM.inputBtn).addEventListener('click', ctrlAddItem);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Creating an Initialization Function
+We will reorganize *controller* module to use functions for most operations.  
+### Setup Event Handlers
+All the event handlers are moved to the initialization function, *setupEventListeners*.
+
+Since the only user of *DOMStrings* is the initialization function, it is moved into *setupEventListeners*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var setupEventListeners = function() {
+
+    var DOM = UICtrl.getDOMStrings()
+    document.querySelector(DOM.inputBtn).addEventListener('click', ctrlAddItem);
+
+    document.addEventListener('keypress',function(event) {
+        if(event.keyCode === 13 || event.which === 13) {
+            ctrlAddItem();
+        }
+    }); 
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Since everything has moved from the top level into a function, we must call the function.
+Additionally, we want the initialization function to be public!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+return {
+    init: function() {
+        console.log('Programm is Initialized!')
+        setupEventListeners();
+    }
+} 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Calling the Initialization Function
+We are still left with who executes the initialization function. It is intended to be called from the main program, outside all the modules.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+  ::        ::          ::       ::
+})(budgetController, UIController);
+
+controller.init();  // Initialize the Program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Creating Income and Expense Function Constructors
+
+* The *budgetController* will need *Function Constructors* for the application.
+* We will need to setup a proper *Data Structures* for handling budget data.
+### Function Constructors
+The best way to store structured data is in an *Object*. Since we want to store lots of Objects, we will create a *Function Constructor*. We will create two Function Constructors, one for *expenses* and one for *income*.
+
+We create separate constructors because while currently they are the same at this stage, later modifications will be expense or income specific.
+
+Remember when we add methods they will be in the prototype. We do not want the methods being replicated in each object. 
+### Data Storage Object
+Now in addition to constructors we will need a place to store our data. Our design is to create a single object to store all the data generated.  
+
+Initially, we will store all the items, expenses and incomes, in the object *allItems*. Further, we will need to store the accumulation values of expenses and income. This is only the initial Data Object, We will be adding other elements to this structure as we build more of the program.
+
+### The Initial *budgetController* Framework
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var budgetController = (function() {
+
+    // Function Constructors
+    var Expense = function(id, description, value) {  // Expense Object Constructor
+        this.id = id;
+        this.description = description;
+        this.value = value;
+    };
+    var Income = function(id, description, value) {  // Income Object Constructor
+        this.id = id;
+        this.description = description;
+        this.value = value;
+    };
+
+    // Data Storage Object
+    var data = {
+        allItems: {
+            exp: [],
+            inc: []
+        },
+        totals: {
+            exp: 0,
+            inc: 0
+        }
+     }
+  
+ })();
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Adding A New Item to Our Budget Controller
+* How to avoid conflicts in our data structures.
+* How and Why to pass data from one module to another.
+
+### A Public Method to Allow others add to the *budgetController Data Structures*.
+
+Processing Steps for **addItem** Public Method:
+* The ID Value for the *newItem* is the ID of last element in appropriate array, by type, plus one.
+* Create the *newItem* based on type (Income or Expense).
+* Push the *newItem* onto the appropriate array by type (Income or Expense).
+* Return the *newItem*.
+
+This public method is added to the *budgetController* Mpdule.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+return {
+    addItem: function(type, des, val) {
+        var newItem;
+        
+        // Next ID is equal to the last ID in the array + 1 : Check for ID = 0
+        if (data.allItems[type].length > 0) {
+            ID = data.allItems[type][data.allItems[type].length -1].id + 1;
+        } else {
+            ID = 0;
+        }
+
+        // Create new item bases on 'inc' or 'exp'
+        if (type === 'exp') {
+            newItem = new Expense(ID, des, val);
+        } else if (type === 'inc') {
+            newItem = new Income(ID, des, val);
+        }
+        
+        // Push new Item into the appropriate array
+        data.allItems[type].push(newItem);
+        
+        // Return the New Element
+        return newItem;
+    },
+        
+    testing: function() {  // Debug to check data structure
+        console.log(data);
+    }
+
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Controller Module Usage of Public Method *addItem*
+The controller simply calls the budgetController **addItem** method.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// 2. Add item to the budgetController 
+ newItem = budgetCtrl.addItem(input.type, input.description, input.value);    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To test if the data structure, *data*, is being loaded correctly input the following in the console:
+
+![Figure [console]: budgetController.testing() result](console_test.png)
+
+The  &#x25B6  may be expanded by clicking on them!
+## Adding a New Item to the UI
+
+This Section:
+* A Technique for adding big chunks of HTML to the DOM.
+* How to replace parts of strings.
+* How to do DOM manipulation using the insertAdjacentHTML method.
+### Adding new *UIController* public method: *addListItem*
+What do we need to add a new item to the list:
+* The object Itself
+* Its type
+
+The Public Method *addListMethod* performs the following actions:
+1. Create HTML String with 'placeholders'
+2. Replace the placeholder test with some actual data
+3. Insert the HTML into the DOM.
+#### Creating HTML string with placeholder text
+The following is the HTML Code for a **UI Income List Item:**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~HTML
+<div class="item clearfix" id="income-0">
+    <div class="item__description">Salary</div>
+    <div class="right clearfix">
+        <div class="item__value">+ 2,100.00</div>
+        <div class="item__delete">
+            <button class="item__delete--btn">
+               <i class="ion-ios-close-outline"></i></button>
+        </div>
+    </div>
+</div>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+However, for our purposes this code has to be coded as a string:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JavaScript
+ addListItem: function(obj, type) {
+        
+      var html, newHtml;
+
+      // 1. Create HTML String with 'placeholders'
+      if (type === 'inc') {
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none output
+           html = '<div class="item clearfix" id="income-0"><div class="item__description">Salary</div><div class="right clearfix"><div class="item__value">+ 2,100.00</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+      } else if (type === 'exp') {
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none output
+            html = 'div class="item clearfix" id="expense-0"><div class="item__description">Apartment rent</div><div class="right clearfix"><div class="item__value">- 900.00</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+      } 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Notice that HTML Strings are coded with double Quotes, so we enclose the HTML Code String  with Single Quotes to avoid complications.
+
+Also, we have to select a particular HTML string based on the *type*, Income or Expense.
+#### Replace Placeholders with Actual Data
+In order to replace placeholders with actual values we must create insertion targets. The convention for these targets is the target name bounded with percentage symbols. For example, **%target-name%**. The following table shows the placeholders and target names for both income and expense HTML strings.
+
+|  Type     | Placeholder    |    Insertion Target 
+|-----------|---------------:|---------------------
+  Income    |  income-0      |  income-%id%
+  Income    |  Salary        | %description%
+  Income    |  2100.00       | %value%
+|-----------|----------------|----------------
+  Expense   | expense-0      |  expense-%id%
+  Expense   | Apartment Rent | %description%
+  Expense   | - 900.00       | %value%
+
+Because the HTML is encoded as string, we can use string methods to replace our target names with actual data!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+newHtml = html.replace('%id%', obj.id);
+newHtml = newHtml.replace('%description%, obj.description);
+newHtml = newHtml.replace('%value%, obj.value);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Notice that we are doing an accumulated replacement, that is, we are doing all the replacements on the same HTML String.
+#### Inserting the Constructed HTML into the DOM.
+This operation is just a more extensive replacement than the HTML String, but essentially the same:
+* Pick a unique *target* in DOM
+* Decide the placement in relationship with the target
+* Insert the our modified HTML string.
+
+In keeping with good practice, we will add the insertion targets to the *DOMStrings* Structure.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var DOMStrings = {    
+    inputType: '.add__type',
+    inputDescription: '.add__description',
+    inputValue: '.add__value',
+    inputBtn: '.add__btn',
+    incomeContainer: '.income__list',   // DOM insertion targets
+    expenseContainer: '.expense__list'
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Since we are already have the if statement for income and expense, we will just add a variable called *element* and load it with either *incomeContainer* or *expenseContainer*.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var html, newHtml, element;       // Add 'element' to the variable declarations
+  ::       ::
+if (type ==='inc;) {
+      element = DOMStrings.incomeContainer;
+      ::         ::
+} else if (type == 'exp') {
+      element = DOMStrings.expenseContainer;
+      ::         ::
+};
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now that the preliminaries are taken care of, the insertion is straight forward.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+document.querySelector(element).insertAdjacentHTML(beforeend, newHtml);       
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Finally, to display the new HTML Code, we must call the *addListItem* 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// 3. Add the item to the UI
+
+UICtrl.addListItem(newItem, input.type);    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Additional Operations for this Project
+Further operations necessary for this project:
+* How to clear HTML Fields
+* How to use *querySelectorAll*
+* How to convert a list into an array
+* A better way to loop over an array than for loops: *foreach*.
+#### How to Clear HTML Fields
+We will add another public function in UIController: *clearFields*.
+
+We will use *querySelectorAll* to clear the appropriate fields. This method has a number of odd features:
+* The list of fields to be cleared are entered as a string: *'field, field, ...'*.
+* Further, it returns a *List Object*.
+* List objects do not have a large variety of methods, so converting to an array is helpful.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var fields, fieldArr;
+
+fields = document.querySelectorAll(DOMStrings.inputDescription + ', ' + DOMStrings.inputValue);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The variable fields contains a list.
+#### Converting Lists into Arrays
+The method of turning a *list* into an *array* is to use the *slice method*.  However, there is the problem that list do not have a *slice method*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+fields.slice()  // This fails, slice is array method
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We can however, use the *call method* to call the *slice* method and pass it the *field* variable as **this** variable.
+
+How do we do that? Ask yourself were is the *slice* method stored? It is stored in the *array prototype*. All arrays inherit from the **Array function constructors**, which are in the array *prototype*, Then it follows that the slice method is also there.
+
+So we can reference the slice method by starting at the *Array function constructor*, the go up the prototype chain, and the slice method that is defined there.  Since the slice method is a function we can use the **call** method specifying *fields* as the **this** variable.  
+
+The result will be an array containing the list values which is stored in a variable. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var fieldsArr = Array.prototype.slice.call(fields); 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Method _forEach_ to step through each element in an array
+The forEach provides three variables:
+* current - Current Value at array index
+* index   - Current Index in the array
+* Array   - The full orginal array
+
+Using these values we can setup an anonymous function to operate on eqch value in the array.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+fieldsArr.forEach(function(current, index, array) {
+     current.value = "";
+});
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Using the _clearFields_ Method
+We use the *clearFields* method in the *controller module* after we call *addListItem*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+    // 3. Add the item to the UI
+    UICtrl.addListItem(newItem, input.type);    
+     
+    // 4. Clear the Fields
+    UICtrl.clearFields();
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Resetting the focus back to the first field
+Resetting focus in not necessary, but a convenience for the user entering many incomes and expenses.
+
+The *focus method* sets the focus to a particular field, in this case:  *description*.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+    fieldsArr.forEach(function(current, index, ) {
+        current.value = "";
+    });
+    
+    fieldsArr[0].focus();  // First Field is description
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Updating the Budget: Controller
+Things that will be covered:
+* Various structural and conceptual issues.
+* How to convert field inputs to numbers.
+* how to prevent false inputs.
+### Various Structural issues.
+The section of the controller that takes care of calculating the budget and updating budget on the UI will be used in two different places, adding items  and deleting items. 
+
+Following the DRY Principle these operations will be extracted and put in a controller function, *updateBudget*. The current controller has the following code and placeholders for future processing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// 4. Clear the Fields
+   UICtrl.clearFields();
+        
+// 5. Calculate the Budget        // Convert these to a separate function.
+// 6. Display Budget on the UI   
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This will be converted to:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// 4. Clear the Fields
+   UICtrl.clearFields();
+        
+// 5. Update the Budget           // Convert these to a separate function.
+   updateBudget();       
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We now create the *updateBudget* function in the *controller* and setup placeholders for future processing.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updateBudget = function() {
+// 1. Calculate the Budget    
+
+// 2. Returns the Budget
+
+// 2. Display Budget on the UI   
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Converting Field Input to Numbers.
+Currently the value input code returns a string. What we want is a floating number. So we have to convert the value field input in *getInput()* to a float before storage. Given the current code shown below:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+getInput: function() {
+   return {
+         ::            ::   ::   
+      value: document.querySelector(DOMStrings.inputValue).value
+   };
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is done by *wrapping* the current code in the method *parseFloat()*.  This function parses a string and converts the string value into a floating point number. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+      value: parseFloat(document.querySelector(DOMStrings.inputValue).value)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Preventing _False_ Inputs
+Preventing false inputs requires installing *Error Checks* in our code that inputs user data. Lets start by modifying the *ctrlAddItem* method in the controller module. Given:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+// 1. Get the field Input Data
+input = UICtrl.getInput();
+
+// 2. Add item to the budgetController 
+       ::        :;         ::
+};
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Everything in the method *ctrlAddItem* after the line *UICtrl.getInput()* **Depends on having actual values to input!**.
+
+**RULE:** Always check inputs for valid values, because we want our programs to be *fool proof*. 
+
+**RULE:** Remember also, that *fools are so damn ingenious*.
+ 
+In order to avoid these problems we will check that the Description is *not an empty string*.  We will also check to make sure the value is a number (not NaN). Also we will check not equal to zero, All items should have a non-zero value.
+
+So our new *ctrlAddItem* now looks as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlAddItem = function() {
+        // Variables
+        var input, newItem;
+
+        // 1. Get the field Input Data and check in inputs are valid.
+        input = UICtrl.getInput();
+
+        if(input.description !== "" && !isNaN(input.value) && input.value > 0) {
+
+            // 2. Add item to the budgetController
+            newItem = budgetCtrl.addItem(input.type, input.description,
+                      input.value);
+
+            // 3. Add the item to the UI
+            UICtrl.addListItem(newItem, input.type);    
+
+            // 4. Clear the Fields
+            UICtrl.clearFields();
+
+            // 5. Calculate and Update Budget
+            updateBudget();   
+        }   
+    };
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Updating the Budget: Budget Controller
+This section covers the following subjects:
+* How and why to create simple, reusable functions with only one purpose.
+* How to sum all elements of an array using the *forEach* Method.
+### Creating Simple Reusable Functions with one Purpose.
+Referring back to our controller method *updateBudget*, we have three sections to complete.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updateBudget = function() {
+// 1. Calculate the Budget    
+
+// 2. Returns the Budget
+
+// 2. Display Budget on the UI   
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Calculate the Budget
+This will be a *public* method in the budgetController Module.  The method with placeholders looks as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+calculateBudget: function() {
+    // 1. Calculate total income and expenses
+
+    // 2, Calculate the budget: income - expenses
+
+    // 3. calculate the percentage of income we have spent.
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The purpose of creating placeholders when beginning to create a method is to focus on what functions are needed. Additionally, we wish to create simple reusable functions that perform one purpose. By thinking about the problem in terms of simple functions, you will hopefully produce better software.
+
+After you create your basic placeholders to guide development, do no forget to perform the same analysis when designing the functions and methods for each placeholder. 
+
+For example, when we consider the design of *Calculate Total Income and Expenses*. What jumps out?
+
+This method is going to sum the values in *two different arrays*, income and expenses. So we will want to create a private function to sum the values of either income or expenses, based on the *type* parameter and return a sum.
+
+The new function shown below:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var calculateTotal = function(type) {
+     var sum =0;
+     data.allItems[type].forEach(function(cur) {
+         sum  += cur.value;    // loop over array and calculate sum
+     });
+     data.totals[type] = sum;  // Store result in the global data structure
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Going back to the CalculateBudget function, compute both sums with the new function. The results of the calculation will be stored in the *global data structure*.
+
+Notice that we created a function that only does one thing. We simply call it twice, thus not repeating ourselves, DRY!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+calculateBudget: function() {
+    // 1. Calculate total income and expenses
+     calculateTotal('inc');
+     calculateTotal('exp');
+        ::        ::       :: 
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In order to compute the budget, we will need a place to store it. The best place is the global data structure. Since we know in the future we will need store a percentage property we also add it to the structure. We will set it to negative one (-1) to indicate that no percentage has been calculated.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+   ::    ::    ::
+    totals: {
+        exp: 0,
+        inc: 0
+    },
+ budget: 0  
+ percentage: -1 
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Given the storage for the budget, we can now calculate the budget as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+   // 2. Calculate the budget: income - expenses
+    data.budget = data.totals.inc - data.totals.exp;
+    ::       ::       ::
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Given the storage for the percentage exists, we can calculate the percentage. We also round the result so we present integer values.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+    // 3. calculate the percentage of income we have spent.
+    data.percentage = Math.round((data.totals.exp/data.totals.inc) * 100);
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### UpdateBudget Method:  Call CalculateBudget in budgetController Module
+Now that we have calculated the budget values, we can use the public method for this function. As we have shown in the last section this method will update the Global Data Structure.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updateBudget = function() {
+    // 1. Calculate the Budget  
+    budgetCtrl.calculateBudget()
+
+    // 2. Return the Budget
+    // 3. Display Budget on the UI   
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We now need a method to return the values and store them locally for later usage. This method will reside in the budgetController Module.
+### getBudget Method: budgetController Module
+Given that we want to return multiple values from this method, we will return an object with properties for each value we will return. These properties will hold selected calculated items from the Global Data Structure.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+getBudget: function() {
+    return {
+        budget: data.budget,
+        totalInc: data.totals.inc,
+        totalExp: data.totals.exp,
+        percentage: data.percentage
+    }; 
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### updateBudget Method: Call getBudget in budgetController Module.
+Now it is just a matter of calling our new *getBudget* method in the *updateBudget* method in the *controller* Module.
+
+ We will also temporarily stub out step 3 with a *console.log* so we can validate all the new code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updateBudget = function() {
+     ::       ::        ::
+    // 2. Return the Budget
+    var budget = budgetCtrl.getBudget();
+
+    // 3. Display Budget on the UI   
+    console.log(budget)
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Updating the Budget: UI Controller
+The section will practice DOM Manipulation by updating the budget and total values.
+### Updating the DOMStrings Structure.
+We will want our new class targets to be specified in the DOMStrings Structure in the UIController.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var DOMStrings = {
+      ::        ::         ::
+      expenseContainer: '.expenses__list',  // Terminate with comma
+      budgetLabel:  'budget__value',        // Add new labels
+      incomeLabel:  'budget__income--value',
+      expensesLabel: 'budget__expenses--value',
+      percentageLabel: 'budget__expenses--percentage'
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Adding a new public method _displayBudget_ to the UIController.
+This function will need four pieces of information passed as an object parameter. Using the new DOMStrings Labels update the textContent of the labels with the values from the object parameter.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+displayBudet: function(obj) {
+     document.querySelector(DOMStrings.budgetLabel).textContent
+      = obj.budget;  
+     document.querySelector(DOMStrings.incomeLabel).textContent
+       = obj.data.totalInc;   
+     document.querySelector(DOMStrings.expensesLabel).textContent
+       = obj.data.totalExp;
+     document.percentageLabel.querySelector(DOMStrings.percentageLabel)
+       = obj.percentage;    
+},    
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### updateBudget Method: Call _displayBudget_ in budgetController Module.
+Now it is just a matter of calling our new *getBudget* method in the *updateBudget* method in the *controller* Module.
+
+ We will also temporarily stub out step 3 with a *console.log* so we can validate all the new code:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updateBudget = function() {
+     ::       ::        ::
+    // 3. Display Budget on the UI   
+    UICtrl.displayBudget(budget);  // Replace temporary console.log
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Fix Display of Percentage
+Given the code below, if you enter income without an expense, the *percentage* displays as minus 1 (-1).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%';
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We can fix this by replacing the original code with the following modification:  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+if (obj.percentage > 0) {
+        document.querySelector(DOMstrings.percentageLabel).textContent = obj.percentage + '%';
+    } else {
+        document.querySelector(DOMstrings.percentageLabel).textContent = '---';
+    }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Initializing the Display Values
+Now that we have the *displayBudget* method, we can use it to initialize the display values in the *init* function.
+
+One problem, what do we use for the *object parameter*? The solution is to create an object with the initial values in place.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+UICtrl.displayBudget( { // Create initialized object in-place
+    budget: 0,
+    totalInc: 0,
+    totalExp: 0,
+    percentage: -1
+    });
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Project Planning and Architecture: Step 2
+We have completed and tested a working first version of *budgety*, The flow chart of this version of the program as it stands now is as follows:
+
+![Figure [DOM Diagram]: Budgety Version One](budgety_version_one.png)
+
+
+## Adding Code for Processing Item Deletions: TO-DO List
+* Add eventHandler
+* Delete the item from our data structure
+* Delete the item from the UI
+* Re-calculate the budget
+* Update the UI
+
+These items are going to explored in a number of upcoming lectures.
+
+### Event Delegation
+A primary concept for this section is **Event Bubbling**. 
+
+![Figure [DOM Diagram]: Event Bubbling](event_bubbling.png)
+
+Starting at the _< button >_ element where the event was triggered, the event triggers all the elements up the DOM Tree until it reaches the *root*.
+
+The element that the event was trigger on, in this case: The < button >link< /button > element is the *target element*.
+
+The target element is a property on the Event Object. Given this fact, all the other elements will know that the event was triggered by the target element.
+
+**Event Delegation** means we can attach an event handler to a parent element and wait for the event to bubble up. In this case we could simply attach the event handler to the *main element*.
+
+There are two main use cases for Event Delegation:
+* When we have an element with lots of child elements that we are interested in. We attach the event handler to the parent instead of attaching event handlers to each child element.
+* When we want an event handler attached to an element that is not yet in the DOM when our page is loaded. In our case we have a lot of element that are not yet loaded when the program initializes, for example:  income and expense items. 
+### Setting Up the Delete Event Listener using Event Delegation
+Goals for this Section:
+* How to use Event Delegation in practice
+* How to use ID's in HTML to connect the UI with the Data Model
+* How to use the *parentNode* property for DOM traversing
+#### Setting Up New Event Handler: *setupEventHandler* function.
+In *index.html* there are multiple versions of __class="item__delete--btn".__ We could attach an event handler to each of these elements, however, that is the wrong way to handle this situation.
+
+What we will do is find a *common parent of all the delete event targets* and place the event handler on the parent.
+
+The parent that is in common to all delete event targets is _< div class="container clearfix" >_ . Both the *income* and *expense* classes are subordinate to this class.
+
+We add the event handler to this parent in the *setupEventHandler function. First, add the class label to the DOMStrings Structure:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var DOMStrings = {
+       ::       ::       ::
+    percentageLabel: '.budget__expenses--percentage', // Add comma
+    container: '.container'                           // Add container label
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now we add the event listener, *ctrlDeleteItem* to the function setupEventListeners.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var setupEventListeners = function() {
+      ::       ::        ::
+    document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Before building the function *ctrlDeleteItem* we have to cover the topic **DOM TRAVERSING*
+#### DOM Traversing
+To move up from the target to the parent node let us modify the *console log* code  to see how works. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+    console.log(event.target.parentNode); // Traverse to immediate parent mode 
+};
+------- Console Output ---------
+<button class='item__delete--but'>_</button>
+----------- HTML ---------------
+<button class="item__delete--btn">              // Parent of target
+<i class="ion-ios-close-outline"></i></button>  // Actual Event Target
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+As you can see, we have traversed, moved up, to the immediate *parentNode*. This is only one parent node, let us look at the supporting HTML Code for an *Income Item*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~HTML
+<div class="item clearfix" id="income-0">
+     <div class="item__description">Salary</div>
+     <div class="right clearfix">
+         <div class="item__value">+ 2,100.00</div>
+         <div class="item__delete">
+             <button class="item__delete--btn">
+                  <i class="ion-ios-close-outline"></i>
+             </button>
+         </div>
+     </div>
+ </div>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The node we wish to get to is **... id="income-0" >**. That will take four parentNode hops:
+1. "item __  delete--btn"
+2. "item __ value"
+3. "item __ description"
+4. "income-0"
+
+The modified console.log code and the resulting log data is as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+     console.log(event.target.parentNode.parentNode.parentNode.parentNode);    
+};
+------- Console Output ---------
+<div class="item clearfix" id="income-0">_</div>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The *id* property in this element is what is important. The *id* uniquely identifies the actual item in our data structure. We need to save this value in a variable.  We will use console.log to display this value for testing. 
+
+Enter two positive values and then click on each delete marker. The result should show different id values.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+     var itemID;
+     itemID = event.target.parentNode.parentNode.parentNode.parentNode.id; 
+     console.log(itemID);   
+};
+------- Console Output ---------
+income-0
+income-1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Remove the console.log statement.
+
+Additionally, understand the way statement is written is *hard coding the DOM structure*. You need to be aware of this if the DOM Structure is changed.
+
+What happens if you "click" elsewhere on the page? Try it -- Nothing happens! Why?
+
+The answer is that the only **'id'** tag in the entire DOM is always related to the delete button. It appears nowhere else. Keep this in mind when building your own programs.
+
+We want at this time to change *income-id* to *inc-id* and same with expense, *exp-id* in the addListItem function. This allows us to use the "type" parameter when coding this function.
+
+The two modified lines are shown below:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+<div class="item clearfix" id="inc-%id%"><div>
+<div class="item clearfix" id="exp-%id%"><div>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Creating _ctrlDeleteItem_ with Placeholders for Further Development
+Before we can process delete an item, we must extract the *type* and *id* from the Event Object. 
+
+As we have before, we create placeholders to guide our development.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+   var itemID, splitID, type, ID;
+   itemID = event.target.parentNode.parentNode.parentNode.parentNode.id;
+   if (itemID) {          // If itemID not defined - will be False
+
+       // Break 'itemID' into type and ID values
+       // inc-1  - will return a array:  ["inc","1"]
+       splitID = itemID.split('-');
+       type = splitID[0];
+       ID = splitID[1];
+
+       //1. Delete from the data structure
+       
+       //2. Delete item from the UI
+       
+       //3. Update and show the new budget
+        
+   }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Deleting an Item From Our Budget Controller
+In this section:
+* Yet another method to loop over an array: map
+* How to remove elements from an array using the splice method.
+
+We will add another public method to the Budget Controller Module. The *deleteItem* method skeleton is as follows:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+deleteItem function(type, id) {
+    // id = 3   // The id of the item to delete    
+    // Now imagine the id's are [1 2 4 6 8]
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now you would think that a simplistic deletion statement such as
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+data.allItems[type][id]; 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+would work. The answer, sadly, is no! If the *id's* where stored in order it would work.
+
+The problem is that as items are entered and deleted, the id's stored in the data structure for each *type* are *Not Sequential*. See example in code above. Thus, we will need a different strategy. 
+
+We must find the actual array index of the *id* location in the array, then perform a splice to remove the item at that index.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+ deleteItem: function(type, id) {
+     var ids, index;
+      
+     ids = data.allItems[type].map(function (current){
+         return current.id;
+     });
+     index = ids.indexOf(id);
+     if (index !== -1) {
+         data.allitems[type].splice(index, 1);
+     }
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Given that we now have a delete method, lets use it in the *controller* Module. One problem that may be overlooked is that the *ID* value must be an integer, not a string. So we convert the string ID into a integer.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+         ::        ::        ::       ::
+        splitID = itemID.split('-');  // Produces two "strings"
+        type = splitID[0];            // Type as a string is correct
+        ID = parseInt(splitID[1]);    // Convert ID from string to integer
+
+        //1. Delete from the data structure
+       budgetCtrl.deleteItem(type, ID)
+       
+       //2. Delete item from the UI       
+       //3. Update and show the new budget
+   }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Deleting an Item from the UI
+We will learn more about DOM manipulation:
+* How to remove an element from the UI
+
+The reference for DOM Manipulation: **blog.garstasio.com/you-dont-need-jquery/dom-manipulation**
+
+Add a new public method: *deleteListItem*. Given the *itemID* is already available deleting the item is fairly easy.
+
+The oddity about the process, *you can only delete a __child__*. This means you have to go up to the *parent of the item* we want to delete, and the delete the child item from the prospective of the parent..
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+deleteListItem: function (selectorID){
+    var el;
+    el = document.getElementByID(selectorID);    // Set 'el' to item to delete
+    el.ParentNode.removeChild(el);               // Remove child from parent node
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now that we have the delete list item function, we can complete *ctrlDeleteItem* in the controller module. The only other thing we need is to update the budget and we already have the method.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlDeleteItem = function(event) {
+          ::      ::     ::      ::
+        //1. Delete from the data structure
+        budgetCtrl.deleteItem(type, ID)
+        
+        //2. Delete item from the UI
+        UICtrl.deleteListItem(itemID)  // Delete item from DOM
+        
+        //3. Update and show the new budget
+        updateBudget();                // Update the Budget 
+    }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Project Planning Architecture: Step 3
+First, here is what we have completed in Step 2.
+
+![Figure [Version Two]: Budgety Version Two](budgety_version_two.png)
+
+The following is our To-Do List for *Version Three* of the budgety program:
+* Calculate percentages
+* Update percentages in the UI
+* We also have to display the *correct month* at the top of the display
+* Improve Number Formatting in the UI display
+* Improve input field UX
+### Updating the percentages: Controller
+First, we add new function named *updatePercentages* to the *controller*.  As we have done in the past we insert placeholders for future code before starting. These placeholders will be replaced the methods defined in both the *budgetController* and the *UIController* Modules.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updatePercentages = function() {
+    
+    //1. Calculate Percentages
+    
+    //2. Read percentages for the budget controller
+    
+    //3. update the UI with the new percentages
+
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now, we need to call this method from the controller. Notice we created a separate function for this operation, this is because it will be called in two places, *ctrlAddItem* and *ctrlDeleteItem*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var ctrlAddItem = function() {
+     ::      ::    :: 
+     // 6. Calculate and update percentages
+     updatePercentates();
+     }
+};
+
+var ctrlDeleteItem = function() {
+     ::      ::    :: 
+     // 4. Calculate and update percentages
+     updatePercentates();
+     }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Updating Percentages: Budget Controller
+
+How to make our budget controller interact with the Expense prototype. As usual we will create a skeleton with placeholders and comments to guide construction of the method.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+calculatePrecentages = function() {
+    // if a = 20 and income = 100 then the expense
+    // percentage will 20%.  We will need a function
+    // on each expense node and income to calculate
+    // the percentage of each expense node.
+
+    //1. Calculate the expense percentage
+
+    //2. Get the expense percentage         
+         
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Calculate Percentage and Store: Budget Controller
+We will need to add a percentage property to our *Expense Constructor* and a public method to calculate the percentage in the expense prototype,
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var Expense = function(id, description, value) {
+   ::     ::     ::
+   this.percentage = -1;    
+};
+
+Expense.Prototype.calcPercentage = function(totalIncome) {
+    if (totalIncome > 0) {
+        this.percentage = Math.round((this.value ./ totalIncode) * 100);
+    } else {
+        this.percentage = -1;
+    }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Get Percentage Value and Return to Caller
+This public method returns the percentage for the selected Expense Item. While simple, remember that the percentage value is *not accessible* from outside the method. So we a need *getter method* to return internal values.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+Expense.Prototype.getPercentage = function() {
+    return this.percentage;        
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This is an example of good programming style: **each function/method should only perform one task**. Thus, we calculate the percentage and storing the result in an object property and in separate method return the internal property value to the outside world.
+
+When choosing to loop over an array there are two common methods:
+* __forEach__ - Executes the function on each element in the array, *but does return a value*.
+* __map__     - Executes the function on each element in the array and *returns a value*.
+
+### Update calculatePrecentages method using new expense method *calcPercentage*.  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+calculatePrecentages = function() {
+     // if a = 20 and income = 100 then the expense
+     // percentage will 20%.  We will need a function
+     // on each expense node and income to calculate
+     // the percentage of each expense node.
+             
+     data.allItems.exp.forEach(function(cur) {
+         cur.calcPercentage();
+    });
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Update getPercentages method using new expense method *getPercentage*.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+getPercentages: function() {
+     var allPerc = data.allItems.exp.map(function(cur) {
+         return cur.getPercentage();
+     });
+     return allPerc; // Returns an array of percentages!
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Notice that getPercentages returns an array, with one entry for each expense node traversed!
+### Update Percentages: controller module
+Now we will use the new Budget Controller methods to update percentages. We still need a UI Controller method update the display the results on the UI.  However, we will just log the percentages now to insure our code is working.
+
+This procedure of stopping development and just logging intermediate  results is  called **Milestone**. This allows a functional check of our modifications before we add more code. I for one, use **git** to store Milestone Points to allow stepping from one working version to the next. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updatePercentages = function() {
+    
+    //1. Calculate Percentages
+    budgetCtrl.calculatePrecentages();
+    
+    //2. Read percentages for the budget controller
+    var percentages = budgetCtrl.getPercentages();
+    
+    //3. update the UI with the new percentages
+    console.log(percentages);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Updating the Percentages: UI Controller
+We will learn:
+* How to create your own *forEach* function by for nodeLists instead of arrays.
+    
+One of our first tasks is update the  DOM Strings Object with the class label of the target.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+    container: '.container',               // Add terminating comma
+    expensesPercLabel: 'item__percentage'  // Add class name of target
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The next thing we must create is a Display Percentages Method. To do this,  we have to do is down load the instances of the label specified in the DOMStrings.  This will return a Node List of the selected targets.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+displayPercentages: function(percentages) {
+    
+  // Get Percentages Node List
+  var fields = document.querySelectorAll(DOMStrings.expensesPercLabel);  
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The reason a node list is returned is that each target element in the html file is called a "Node".  These are collected by *querySelectorAll*  and returned as a node list.
+
+
+Now we could do "hack" and simply convert the *Node List* to an *Array*.  However, what we want to do is a *forEach* over node list.
+However, there is not a forEach method for node lists.
+
+That being the case we will build our own *forEach Method*. I am starting with the completed code, as it easier to explain if you can the completed method.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript.
+     var fields = document.querySelectorAll(DOMStrings.expensesPercLabel);   
+
+    // Execute nodeListForEach
+    var nodeListForEach = function(list, callback) {
+       for (var i= 0; i < list.length; i++} {
+            callback(list[i], i);
+       }
+    };
+
+    // Nodelist forEach Method
+    nodeListForEach(fields, function(current, index) {
+         if (percentages[index] > 0) {
+             current.textContent = percentages[index] + '%';
+         } else {
+             current.textContent = '---';
+         }
+
+    });
+                          
+},
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Completing the Update Percentages Method
+Now we simply execute the method in the controller module replacing the console.log statement we used to exercise the Milestone code in the *updatePercentages* method.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+var updatePercentages = function() {
+    ::      ::       ::      ::    
+    // 3. update the UI with the new percentages
+    // Old code:    console.log(percentages);
+
+    UICtrl.displayPercentages(percentages)  // Replacement Code
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+/* DELETE THIS WHEN DONE -- DONE TO POSITION MARKDEEP TEXT AT END OF ACTIVE WORK */
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~JavaScript
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+**end of doc**
+
+
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
